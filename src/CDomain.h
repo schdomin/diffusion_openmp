@@ -1,10 +1,7 @@
 #ifndef CDOMAIN_H_
 #define CDOMAIN_H_
 
-#include <fstream> //ds streaming to file for visualization
-#include <math.h>  //ds fabs, etc.
-#include <iostream>
-#include <omp.h>
+#include <fstream> //ds streaming to file for visualization and various container types (pair, etc.)
 
 
 

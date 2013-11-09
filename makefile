@@ -2,12 +2,15 @@
 CC = g++
 
 #ds compiler flags
-CFLAGS = -c -Wall -fopenmp
+CFLAGS = -c
+
+#ds linker flags
+LFLAGS = -fopenmp
 
 #ds default field
 all: main
 
-	$(CC) bin/CDomain.o bin/main.o -o bin/diffusion_openmp
+	$(CC) $(LFLAGS) bin/CDomain.o bin/main.o -o bin/diffusion_openmp
 
 #ds object files
 main:

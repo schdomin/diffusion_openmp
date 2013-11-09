@@ -1,6 +1,9 @@
 #include "CDomain.h" //ds grid
 #include "Timer.h"   //ds time measurement
+#include <iostream>  //ds cout
+#include <math.h>    //ds sqrt, etc.
 #include <stdlib.h>  //ds atoi
+#include <omp.h>     //open mp
 
 int main( int argc, char** argv )
 {
@@ -24,7 +27,7 @@ int main( int argc, char** argv )
     const double dTimeStepSize( 0.5*dGridPointSpacing*dGridPointSpacing/dDiffusionCoefficient );
 
     //ds user information
-    std::cout << "\n---------------------------- DIFFUSION SERIAL SETUP ----------------------------" << std::endl;
+    std::cout << "\n---------------------------- DIFFUSION OpenMP SETUP ----------------------------" << std::endl;
     std::cout << "Diffusion Coefficient: " << dDiffusionCoefficient << std::endl;
     std::cout << "        Boundary (2D): [" << prBoundaries.first << ", " << prBoundaries.second << "]" << std::endl;
     std::cout << "   Grid Point Spacing: " << dGridPointSpacing << std::endl;
@@ -35,7 +38,16 @@ int main( int argc, char** argv )
     //ds allocate domain (automatically creates initial density distribution)
     Diffusion::CDomain cDomain( dDiffusionCoefficient, prBoundaries, dGridPointSpacing, dTimeStepSize );
 
-    //ds information
+    #pragma omp parallel
+    {
+        int me = omp_get_thread_num();
+        int nthr = omp_get_num_threads();
+        printf("Hello from thread %d of %d\n", me, nthr);
+    }
+
+
+
+    /*ds information
     std::cout << "               Status:  0% done - current time: 0";
 
     //ds get the mode mode
@@ -119,5 +131,7 @@ int main( int argc, char** argv )
         std::cout << "-----------------------------------------------------------------------------" << std::endl;
 
         return 0;
-    }
+    }*/
+
+    return 0;
 }

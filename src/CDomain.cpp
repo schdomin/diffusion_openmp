@@ -1,4 +1,6 @@
 #include "CDomain.h"
+#include <math.h>    //ds fabs, etc.
+#include <omp.h>     //open mp
 
 
 
