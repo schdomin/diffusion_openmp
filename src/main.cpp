@@ -30,16 +30,26 @@ int main( int argc, char** argv )
     //ds set threads (no need for env variable)
     omp_set_num_threads( uNumberOfThreads );
 
+    //ds buffer
+    unsigned int uCurrentNumberOfThreads( 0 );
+
+    //ds get number of threads (has to be called in a parallelized context)
+    #pragma omp parallel
+    {
+            uCurrentNumberOfThreads = omp_get_num_threads( );
+    }
+
     //ds user information
     std::cout << "\n---------------------------- DIFFUSION OpenMP SETUP ----------------------------" << std::endl;
     std::cout << "Diffusion Coefficient: " << dDiffusionCoefficient << std::endl;
     std::cout << "        Boundary (2D): [" << prBoundaries.first << ", " << prBoundaries.second << "]" << std::endl;
+    std::cout << "Number of Grid Points: " << uNumberOfGridPoints << std::endl;
     std::cout << "   Grid Point Spacing: " << dGridPointSpacing << std::endl;
     std::cout << " Number of Time Steps: " << uNumberOfTimeSteps << std::endl;
     std::cout << "       Time Step Size: " << dTimeStepSize << std::endl;
     std::cout << "--------------------------------------------------------------------------------" << std::endl;
     std::cout << "Number of Threads Set: " << uNumberOfThreads << std::endl;
-    std::cout << "Number of Threads Now: " << omp_get_num_threads() << std::endl;
+    std::cout << "Number of Threads Now: " << uCurrentNumberOfThreads << std::endl;
     std::cout << "--------------------------------------------------------------------------------" << std::endl;
 
     //ds allocate domain (automatically creates initial density distribution)
