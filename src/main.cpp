@@ -110,6 +110,7 @@ int main( int argc, char** argv )
 
             //ds update domain
             cDomain.updateHeatDistributionNumerical( );
+            //cDomain.updateHeatDistributionAnalytical( dCurrentTime );
 
             //ds streaming
             cDomain.saveHeatGridToStream( );
