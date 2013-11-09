@@ -3,15 +3,15 @@
 #include <iostream>  //ds cout
 #include <math.h>    //ds sqrt, etc.
 #include <stdlib.h>  //ds atoi
-#include <omp.h>     //open mp
+#include <omp.h>     //ds threading info
 
 int main( int argc, char** argv )
 {
     //ds check simple input arguments - CAUTION: the implementation expects real numbers, the simulation will be corrupted if invalid values are entered
-    if( 4 != argc )
+    if( 5 != argc )
     {
         //ds inform
-        std::cout << "usage: diffusion_serial [Number of grid points] [Number of time steps] [Performance mode: 1(yes)/0(no)]" << std::endl;
+        std::cout << "usage: diffusion_serial [Number of grid points] [Number of time steps] [Number of threads] [Performance mode: 1(yes)/0(no)]" << std::endl;
         return 0;
     }
 
@@ -25,6 +25,10 @@ int main( int argc, char** argv )
     const double dGridPointSpacing( 1/( sqrt( uNumberOfGridPoints ) - 1 ) );
     const unsigned int uNumberOfTimeSteps( atoi( argv[2] ) );
     const double dTimeStepSize( 0.5*dGridPointSpacing*dGridPointSpacing/dDiffusionCoefficient );
+    const unsigned int uNumberOfThreads( atoi( argv[3] ) );
+
+    //ds set threads (no need for env variable)
+    omp_set_num_threads( uNumberOfThreads );
 
     //ds user information
     std::cout << "\n---------------------------- DIFFUSION OpenMP SETUP ----------------------------" << std::endl;
@@ -34,24 +38,18 @@ int main( int argc, char** argv )
     std::cout << " Number of Time Steps: " << uNumberOfTimeSteps << std::endl;
     std::cout << "       Time Step Size: " << dTimeStepSize << std::endl;
     std::cout << "--------------------------------------------------------------------------------" << std::endl;
+    std::cout << "Number of Threads Set: " << uNumberOfThreads << std::endl;
+    std::cout << "Number of Threads Now: " << omp_get_num_threads() << std::endl;
+    std::cout << "--------------------------------------------------------------------------------" << std::endl;
 
     //ds allocate domain (automatically creates initial density distribution)
     Diffusion::CDomain cDomain( dDiffusionCoefficient, prBoundaries, dGridPointSpacing, dTimeStepSize );
 
-    #pragma omp parallel
-    {
-        int me = omp_get_thread_num();
-        int nthr = omp_get_num_threads();
-        printf("Hello from thread %d of %d\n", me, nthr);
-    }
-
-
-
-    /*ds information
+    //ds information
     std::cout << "               Status:  0% done - current time: 0";
 
     //ds get the mode mode
-    const unsigned int uMode( atoi( argv[3] ) );
+    const unsigned int uMode( atoi( argv[4] ) );
 
     //ds check for performance run (no streaming)
     if( 1 == uMode )
@@ -78,16 +76,6 @@ int main( int argc, char** argv )
             //ds update domain
             cDomain.updateHeatDistributionNumerical( );
         }
-
-        //ds stop timing
-        const double dDurationSeconds( tmTimer.stop( ) );
-
-        //ds cause an output ostream
-        std::cout << std::endl;
-        std::cout << "     Computation time: " << dDurationSeconds << std::endl;
-        std::cout << "-----------------------------------------------------------------------------" << std::endl;
-
-        return 0;
     }
     else
     {
@@ -117,21 +105,19 @@ int main( int argc, char** argv )
             cDomain.saveHeatGridToStream( );
             cDomain.saveNormsToStream( dCurrentTime );
         }
+    }
 
-        //ds save the stream to a file
-        cDomain.writeHeatGridToFile( "bin/simulation.txt", uNumberOfTimeSteps );
-        cDomain.writeNormsToFile( "bin/norms.txt", uNumberOfTimeSteps, dTimeStepSize );
+    //ds save the stream to a file
+    cDomain.writeHeatGridToFile( "bin/simulation.txt", uNumberOfTimeSteps );
+    cDomain.writeNormsToFile( "bin/norms.txt", uNumberOfTimeSteps, dTimeStepSize );
 
-        //ds stop timing
-        const double dDurationSeconds( tmTimer.stop( ) );
+    //ds stop timing
+    const double dDurationSeconds( tmTimer.stop( ) );
 
-        //ds cause an output ostream
-        std::cout << std::endl;
-        std::cout << "     Computation time: " << dDurationSeconds << std::endl;
-        std::cout << "-----------------------------------------------------------------------------" << std::endl;
-
-        return 0;
-    }*/
+    //ds cause an output ostream
+    std::cout << std::endl;
+    std::cout << "     Computation time: " << dDurationSeconds << std::endl;
+    std::cout << "-----------------------------------------------------------------------------\n" << std::endl;
 
     return 0;
 }
