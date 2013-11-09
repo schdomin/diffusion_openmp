@@ -2,7 +2,7 @@
 CC = g++
 
 #ds compiler flags
-CFLAGS = -c
+CFLAGS = -c -fopenmp
 
 #ds linker flags
 LFLAGS = -fopenmp
