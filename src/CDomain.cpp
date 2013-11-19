@@ -70,11 +70,8 @@ void CDomain::updateHeatDistributionNumerical( )
         #pragma omp for //ds STEP 1: loop over all rows (i and j are used to conform with exercise parameters) - ignore first and last row (boundary)
         for( unsigned int j = 1; j < m_uNumberOfGridPoints1D-1; ++j )
         {
-            //ds get constant outer index for threads
-            const unsigned int jC( j );
-
             //ds structures for implicit equation system (values set to 0 per default)
-            double vecNewHeat[m_uNumberOfGridPoints1D];
+            //double vecNewHeat[m_uNumberOfGridPoints1D];
             double vecPreviousHeat[m_uNumberOfGridPoints1D];
 
             //ds boundaries
@@ -84,29 +81,28 @@ void CDomain::updateHeatDistributionNumerical( )
             for( unsigned int i = 1; i < m_uNumberOfGridPoints1D-1; ++i )
             {
                 //ds get previous heat
-                vecPreviousHeat[i] = m_gridHeat[i][jC] + m_dDiffusionFactor*( m_gridHeat[i+1][jC] - 2*m_gridHeat[i][jC] + m_gridHeat[i-1][jC] );
+                vecPreviousHeat[i] = m_gridHeat[i][j] + m_dDiffusionFactor*( m_gridHeat[i+1][j] - 2*m_gridHeat[i][j] + m_gridHeat[i-1][j] );
             }
 
             //ds update coefficient matrix
-            computeCoefficients( );
+            //computeCoefficients( );
 
             //ds compute the new heat
-            solveMatrix( m_uNumberOfGridPoints1D, m_matCoefficients[2], m_matCoefficients[1], m_matCoefficients[0], vecPreviousHeat, vecNewHeat );
+            //solveMatrix( m_uNumberOfGridPoints1D, m_matCoefficients[2], m_matCoefficients[1], m_matCoefficients[0], vecPreviousHeat, vecNewHeat );
+            solveMatrixFast( vecPreviousHeat, m_uNumberOfGridPoints1D, m_matCoefficients[2], m_matCoefficients[1], m_matCoefficients[0] );
 
             for( unsigned int u = 0; u < m_uNumberOfGridPoints1D; ++u )
             {
-                m_gridHeat[u][jC] = vecNewHeat[u];
+                //m_gridHeat[u][j] = vecNewHeat[u];
+                m_gridHeat[u][j] = vecPreviousHeat[u];
             }
         }
 
         #pragma omp for //ds STEP 2: loop over all columns (i and j are used to conform with exercise parameters) - ignore first and last column (boundary)
         for( unsigned int i = 1; i < m_uNumberOfGridPoints1D-1; ++i )
         {
-            //ds get constant outer index for threads
-            const unsigned int iC( i );
-
             //ds structures for implicit equation system (values set to 0 per default)
-            double vecNewHeat[m_uNumberOfGridPoints1D];
+            //double vecNewHeat[m_uNumberOfGridPoints1D];
             double vecPreviousHeat[m_uNumberOfGridPoints1D];
 
             //ds boundaries
@@ -116,18 +112,20 @@ void CDomain::updateHeatDistributionNumerical( )
             for( unsigned int j = 1; j < m_uNumberOfGridPoints1D-1; ++j )
             {
                 //ds get previous heat
-                vecPreviousHeat[j] = m_gridHeat[iC][j] + m_dDiffusionFactor*( m_gridHeat[iC][j+1] - 2*m_gridHeat[iC][j] + m_gridHeat[iC][j-1] );
+                vecPreviousHeat[j] = m_gridHeat[i][j] + m_dDiffusionFactor*( m_gridHeat[i][j+1] - 2*m_gridHeat[i][j] + m_gridHeat[i][j-1] );
             }
 
             //ds updates coefficient matrix
-            computeCoefficients( );
+            //computeCoefficients( );
 
             //ds compute the new heat
-            solveMatrix( m_uNumberOfGridPoints1D, m_matCoefficients[2], m_matCoefficients[1], m_matCoefficients[0], vecPreviousHeat, vecNewHeat );
+            //solveMatrix( m_uNumberOfGridPoints1D, m_matCoefficients[2], m_matCoefficients[1], m_matCoefficients[0], vecPreviousHeat, vecNewHeat );
+            solveMatrixFast( vecPreviousHeat, m_uNumberOfGridPoints1D, m_matCoefficients[2], m_matCoefficients[1], m_matCoefficients[0] );
 
             for( unsigned int u = 0; u < m_uNumberOfGridPoints1D; ++u )
             {
-                m_gridHeat[iC][u] = vecNewHeat[u];
+                //m_gridHeat[i][u] = vecNewHeat[u];
+                m_gridHeat[i][u] = vecPreviousHeat[u];
             }
         }
     }
@@ -135,17 +133,13 @@ void CDomain::updateHeatDistributionNumerical( )
 
 void CDomain::updateHeatDistributionAnalytical( const double& p_dCurrentTime )
 {
-    //ds for all grid points
+#pragma omp parallel for
     for( unsigned int u = 0; u < m_uNumberOfGridPoints1D; ++u )
     {
-        //ds get constant outer index for threads
-        const unsigned int uC( u );
-
-        #pragma omp parallel for
         for( unsigned int v = 0; v < m_uNumberOfGridPoints1D; ++v )
         {
             //ds get the exact heat at this point
-            m_gridHeat[uC][v] = getHeatAnalytical( uC*m_dGridPointSpacing, v*m_dGridPointSpacing, p_dCurrentTime );
+            m_gridHeat[u][v] = getHeatAnalytical( u*m_dGridPointSpacing, v*m_dGridPointSpacing, p_dCurrentTime );
         }
     }
 }
@@ -263,17 +257,13 @@ void CDomain::writeNormsToFile( const std::string& p_strFilename, const unsigned
 //ds helpers
 void CDomain::setInitialHeatDistribution( )
 {
-    //ds loop over all indexi
+    #pragma omp parallel for
     for( unsigned int u = 0; u < m_uNumberOfGridPoints1D; ++u )
     {
-        //ds get constant outer index for threads
-        const unsigned int uC( u );
-
-        #pragma omp parallel for
         for( unsigned int v = 0; v < m_uNumberOfGridPoints1D; ++v )
         {
             //ds set initial heat value
-            m_gridHeat[uC][v] = sin( uC*m_dGridPointSpacing*2*M_PI )*sin( v*m_dGridPointSpacing*2*M_PI );
+            m_gridHeat[u][v] = sin( u*m_dGridPointSpacing*2*M_PI )*sin( v*m_dGridPointSpacing*2*M_PI );
         }
     }
 
@@ -304,15 +294,18 @@ void CDomain::computeCoefficients( )
         m_matCoefficients[2][u] = -m_dDiffusionFactor;
     }
 
-    //ds sup diagonal: 0 .. n-2 size: "n-1"
+    /*ds sup diagonal: 0 .. n-2 size: "n-1"
     m_matCoefficients[0][0]                         = 0.0;
+    m_matCoefficients[0][1]                         = 0.0;
 
     //main diagonal boundary condition
-    m_matCoefficients[1][0]                         = 1.0;
-    m_matCoefficients[1][m_uNumberOfGridPoints1D-1] = 1.0;
+    m_matCoefficients[1][0]                         = 0.0;
+    m_matCoefficients[1][m_uNumberOfGridPoints1D-1] = 0.0;
 
     //ds sub diagonal: 1 .. n-1 size: "n-1"
     m_matCoefficients[2][m_uNumberOfGridPoints1D-1] = 0.0;
+    m_matCoefficients[2][m_uNumberOfGridPoints1D-2] = 0.0;*/
+
 }
 
 //ds snippet from exercise sheet 1:1
@@ -340,6 +333,37 @@ void CDomain::solveMatrix( int n, double *a, double *b, double *c, double *v, do
     {
         x[i] = ( v[i]-c[i] * x[i+1] )/b[i];
     }
+}
+
+//ds snippet from: http://en.wikipedia.org/wiki/Tridiagonal_matrix_algorithm/Derivation#Implementation_in_C
+void CDomain::solveMatrixFast( double* x, const unsigned int N, const double* a, const double* b, const double* c )
+{
+    /* Allocate scratch space. */
+    double * cprime = new double[N];
+
+    if (!cprime) {
+        /* do something to handle error */
+    }
+
+    cprime[0] = c[0] / b[0];
+    x[0] = x[0] / b[0];
+
+    /* loop from 1 to N - 1 inclusive */
+    for( unsigned int u = 1; u < N; u++ )
+    {
+        double m = 1.0 / (b[u] - a[u] * cprime[u - 1]);
+        cprime[u] = c[u] * m;
+        x[u] = (x[u] - a[u] * x[u - 1]) * m;
+    }
+
+    /* loop from N - 2 to 0 inclusive, safely testing loop end condition */
+    for( unsigned int u = N - 1; u > 0; u-- )
+    {
+        x[u] = x[u] - cprime[u] * x[u + 1];
+    }
+
+    /* free scratch space */
+    delete[] cprime;
 }
 
 } //namespace Diffusion
